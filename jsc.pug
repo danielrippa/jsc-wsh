@@ -1,0 +1,38 @@
+job: script
+
+  include:livescript(bare=true) NativeString.ls
+  include:livescript(bare=true) NativeArray.ls
+  include:livescript(bare=true) NativeFunction.ls
+
+  include:livescript(bare=true) Args.ls
+  include:livescript(bare=true) IO.ls
+  include:livescript(bare=true) FileSystem.ls
+  include:livescript(bare=true) TextFile.ls
+  include:livescript(bare=true) ObjectFile.ls
+  include:livescript(bare=true) Shell.ls
+  include:livescript(bare=true) Wsh.ls
+
+  include:livescript(bare=true) Jsc.ls
+  include:livescript(bare=true) ScriptParser.ls
+  include:livescript(bare=true) NamespacePathResolver.ls
+  include:livescript(bare=true) DependencyBuilder.ls
+  include:livescript(bare=true) DependencyManager.ls
+  include:livescript(bare=true) ScriptComposer.ls
+
+  :livescript(bare=true)
+
+    { argc, argv } = Args
+    { compose-script-lines } = ScriptComposer
+    { writeln } = IO
+    { get-usage } = Jsc
+    { fail } = Wsh
+
+    if argc > 0
+      filepath = argv.0
+    else
+      fail get-usage!
+
+    for line in compose-script-lines filepath
+
+      writeln line
+
