@@ -1,7 +1,7 @@
 
   Jsc = do ->
 
-    { get-name } = FileSystem
+    { get-name, path-separator } = FileSystem
     { script-name } = Wsh
     { repeat-string, trim } = NativeString
     { first-item } = NativeArray
@@ -47,11 +47,14 @@
 
               return yes
 
+    as-filepath = (namespace, name) -> "#namespace#path-separator#name.ls"
+
     {
       get-usage,
       livescript,
       indent,
       dependency-keyword,
       comment,
-      is-comment-line, is-reference-line, is-do-line
+      is-comment-line, is-reference-line, is-do-line,
+      as-filepath
     }

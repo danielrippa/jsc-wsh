@@ -1,9 +1,10 @@
 
   NamespacePathResolver = do ->
 
-    { file-exists } = FileSystem
+    { file-exists, folder-exists, path-separator } = FileSystem
     { get-current-folder } = Shell
     { read-objectfile } = ObjectFile
+    { as-filepath } = Jsc
 
     current-folder = get-current-folder!
 
@@ -25,7 +26,7 @@
 
       namespaces = qualified-namespace / '.'
 
-      namespace-path = ([ current-folder ] ++ namespaces) * '\\'
+      namespace-path = ([ current-folder ] ++ namespaces) * "#path-separator"
 
       filesystem-namespaces[ qualified-namespace ] := namespace-path
 
@@ -33,14 +34,21 @@
 
     #
 
-    get-filesystem-namespace-path = (qualified-namespace) ->
+    get-filesystem-namespace-paths = (qualified-namespace) ->
+
+      paths = []
 
       namespace-path = filesystem-namespaces[qualified-namespace]
 
       if namespace-path isnt void
-        return namespace-path
+        paths.push namespace-path
 
-      resolve-filesystem-namespace-path qualified-namespace
+      namespace-path = resolve-filesystem-namespace-path qualified-namespace
+
+      if namespace-path isnt void
+        paths.push namespace-path
+
+      paths
 
     #
 
@@ -48,37 +56,54 @@
 
       root-configuration-namespace = configuration-namespaces['.']
 
-      if root-configuration-namespace isnt void
+      namespaces = qualified-namespace / '.'
 
-        namespaces = qualified-namespace / '.'
+      if root-configuration-namespace isnt void
 
         ([ root-configuration-namespace ] ++ namespaces) * '\\'
 
     #
 
-    get-configuration-namespace-path = (qualified-namespace) ->
+    get-configuration-namespace-paths = (qualified-namespace) ->
+
+      paths = []
 
       namespace-path = configuration-namespaces[qualified-namespace]
 
       if namespace-path isnt void
-        return namespace-path
+        paths.push namespace-path
 
-      resolve-configuration-namespace-path qualified-namespace
+      namespace-path = resolve-configuration-namespace-path qualified-namespace
+      if namespace-path isnt void
+        paths.push namespace-path
+
+      paths
 
     #
 
-    resolve-namespace-path = (qualified-namespace) ->
+    namespace-path-resolution-strategies =
 
-      if qualified-namespace is ''
-        return current-folder
+      * get-filesystem-namespace-paths
+        get-configuration-namespace-paths
 
-      namespace-path = get-configuration-namespace-path qualified-namespace
+    resolve-namespace-path = (qualified-namespace, dependency-name) ->
 
-      if namespace-path is void
+      for get-namespace-paths in namespace-path-resolution-strategies
 
-        namespace-path = get-filesystem-namespace-path qualified-namespace
+        for namespace-path in get-namespace-paths qualified-namespace
 
-      namespace-path
+          if namespace-path isnt void
+
+            if folder-exists namespace-path
+
+              filepath = namespace-path |> as-filepath _ , dependency-name
+
+              WScript.Echo namespace-path, filepath
+
+
+
+              if file-exists filepath
+                return namespace-path
 
     {
       resolve-namespace-path

@@ -6,51 +6,24 @@
     { read-textfile-lines } = TextFile
     { trim } = NativeString
 
-    { is-do-line } = Jsc
+    { is-do-line, as-filepath } = Jsc
 
     #
 
-    read-dependency-lines = (filepath, qualified-dependency-name) ->
+    invalid-dependency-syntax = (dependency-lines) ->
 
-      if not file-exists filepath
-
-        fail do
-
-          * "Unable to read dependency '#qualified-dependency-name'."
-            "File '#filepath' not found."
-            "Check your 'namespaces.conf' file."
-
-      try dependency-lines = read-textfile-lines filepath
-      catch
-
-        fail do
-
-          * "Unable to read dependency '#qualified-dependency-name'"
-            e.message
-            "Check your 'namespaces.conf' file."
-
-      dependency-lines
-
-    #
-
-    parse-dependency-lines = (dependency-lines, qualified-dependency-name, filepath) ->
+      invalid = yes
 
       for line in dependency-lines
 
         if (trim line) is ''
           continue
 
-        break if is-do-line line
+        if is-do-line line
+          invalid = no
+          break
 
-        fail do
-
-          * "Syntax error in dependency '#qualified-dependency-name'."
-            "(#filepath)"
-            "Dependency source must start with 'do ->'"
-
-      result = ScriptParser.parse-script-lines dependency-lines
-
-      result
+      invalid
 
     #
 
@@ -58,31 +31,28 @@
 
       { qualified-namespace, qualified-dependency-name, dependency-name } = dependency-name-metadata
 
-      namespace-path = NamespacePathResolver.resolve-namespace-path qualified-namespace
+      WScript.Echo 'dependency-name:', "[#dependency-name]"
+
+      namespace-path = NamespacePathResolver.resolve-namespace-path qualified-namespace, dependency-name
 
       if namespace-path is void
 
+        fail "Unable to resolve dependency '#qualified-dependency-name'."
+
+      filepath = as-filepath namespace-path, dependency-name
+
+      try dependency-lines = read-textfile-lines filepath
+      catch => fail ""
+
+      if invalid-dependency-syntax dependency-lines
+
         fail do
 
-          * "Unable to resolve path of dependency '#qualified-dependency-name'."
-            "Check your 'namespaces.conf' file."
+          * "Syntax error in dependency '#qualified-dependency-name'."
+            "(#filepath)"
+            "Dependency source must start with 'do ->'"
 
-      if not folder-exists namespace-path
-
-        fail do
-
-          * "Unable to resolve path of dependency '#qualified-dependency-name'"
-            "Folder '#namespace-path' not found."
-            "Check your 'namespaces.conf' file."
-
-      filepath = [ namespace-path, "#dependency-name.ls" ] * '\\'
-
-      { references, source } =
-
-        filepath
-
-          |> read-dependency-lines _ , qualified-dependency-name
-          |> parse-dependency-lines _ , qualified-dependency-name, filepath
+      { references, source } = ScriptParser.parse-script-lines dependency-lines
 
       dependency-name-metadata with { references, source, filepath }
 

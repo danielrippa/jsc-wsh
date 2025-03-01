@@ -62,6 +62,8 @@
 
     parse-reference-line = (line) ->
 
+      WScript.Echo "reference-line: [#line]"
+
       [ members-line, dependency-name ] = line.split dependency-keyword
 
       dependency-name-metadata = parse-qualified-dependency-name dependency-name

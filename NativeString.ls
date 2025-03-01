@@ -5,10 +5,12 @@
 
     cr = '\r' ; lf = '\n' ; crlf = "#cr#lf"
 
+    regex = -> new RegExp it, 'g'
+
     record = char 30
 
-    replace-crlf = (.replace crlf, record)
-    replace-lf   = (.replace lf,   record)
+    replace-crlf = (.replace (regex crlf), record)
+    replace-lf   = (.replace (regex lf),   record)
 
     string-as-records = -> it |> replace-crlf |> replace-lf
 

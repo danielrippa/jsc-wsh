@@ -3,7 +3,7 @@
 
     file-system = -> new ActiveXObject 'Scripting.FileSystemObject'
 
-    file-system!
+    fs = file-system!
 
       file-exists = -> ..FileExists it
       folder-exists = -> ..FolderExists it
@@ -11,8 +11,11 @@
       get-name = -> ..GetBaseName it
       get-absolute-path = -> ..GetAbsolutePathName it
 
+    path-separator = '\\'
+
     {
       file-system,
       file-exists, folder-exists,
-      get-name, get-absolute-path
+      get-name, get-absolute-path,
+      path-separator
     }
