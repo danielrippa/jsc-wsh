@@ -1,51 +1,49 @@
 
   DependencyManager = do ->
 
-    { lcase } = NativeString
+    { each-array-item } = NativeArray
+    { each-object-member } = NativeObject
+    { lower-case } = NativeString
+    { build-dependency } = DependencyBuilder
+    { value-as-string, value-type-tag } = NativeType
 
-    #
+    resolved-dependencies = {} ; dependencies = []
 
-    resolved-dependencies = {}
-    dependencies = []
+    add-dependency = (dependency) ->
 
-    add-dependency = (dependency) !->
+      { qualified-dependency-name } = dependency
 
-      dependency-name = lcase dependency.qualified-dependency-name
-
-      resolved-dependencies[dependency-name] := dependency
+      resolved-dependencies[ lower-case qualified-dependency-name ] := dependency
       dependencies.push dependency
 
     #
 
-    resolve-reference = (parent-reference) ->
+    resolve-dependency-reference = (parent-reference) ->
 
-      { dependency-name-metadata: parent } = parent-reference
+      { dependency-name-metadata: parent-metadata } = parent-reference
+      { qualified-dependency-name: parent-dependency-name } = parent-metadata
 
-      parent-dependency = resolved-dependencies[ lcase parent.qualified-dependency-name ]
+      dependency-key = lower-case parent-dependency-name
 
-      if parent-dependency is void
+      if resolved-dependencies[ dependency-key ] is void
+        add-dependency build-dependency parent-metadata
 
-        parent-dependency = DependencyBuilder.build-dependency parent
+      { dependencies-references } = resolved-dependencies[ dependency-key ]
 
-      for , child-reference of parent-dependency.references
+      each-object-member dependencies-references, (child-reference) ->
 
-        { dependency-name-metadata: child } = child-reference
+        { dependency-name-metadata: { qualified-dependency-name } } = child-reference
 
-        child-dependency = resolved-dependencies[ lcase child.qualified-dependency-name ]
-
+        child-dependency = resolved-dependencies[ lower-case qualified-dependency-name ]
         if child-dependency is void
 
-          resolve-reference child-reference
-
-      add-dependency parent-dependency
+          resolve-dependency-reference child-reference
 
     #
 
     resolve-dependencies-references = (references) ->
 
-      for ,reference of references
-
-        resolve-reference reference
+      each-object-member references, (key, value) -> resolve-dependency-reference value
 
       dependencies
 

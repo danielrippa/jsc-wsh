@@ -1,60 +1,31 @@
 
   Jsc = do ->
 
-    { get-name, path-separator } = FileSystem
-    { script-name } = Wsh
-    { repeat-string, trim } = NativeString
-    { first-item } = NativeArray
+    { script-filepath } = Script
+    { file-name } = FileSystem
+    { fail } = Script
+    { read-text-file } = TextFile
 
-    dependency-keyword = ' dependency '
-
-    livescript = ":livescript(bare='true' header='\\n')"
-
-    get-usage = ->
+    usage =
 
       * "Usage:"
-        "#{ get-name script-name } filepath"
+        "#{ file-name script-filepath } filepath"
 
-    indent = (level, string) -> "#{ repeat-string ' ', level }#string"
+    filepath-arg = (argv) ->
 
-    comment = -> "``// #it``"
+      switch argv
 
-    is-comment-line = (line) ->
+        | []  => fail [ "Missing filepath argument" ] ++ usage , 1
 
-      chars = (trim line) / ''
-      (first-item chars) is '#'
+        else argv.0
 
-    is-reference-line = (line) ->
+    main-script-content = (argv) ->
 
-      (line.index-of dependency-keyword) isnt -1
+      try content = read-text-file filepath-arg argv
+      catch => fail [ "Unable to read main script file '#filepath'", e.message ], 2
 
-    is-do-line = (line) ->
-
-      line = trim line
-
-      return no if line is ''
-
-      if (line.index-of 'do') isnt -1
-        if (line.index-of '->') isnt -1
-
-          [ first, last ] = line.split ' '
-
-          first = trim first
-          last  = trim last
-
-          if first is 'do'
-            if last is '->'
-
-              return yes
-
-    as-filepath = (namespace, name) -> "#namespace#path-separator#name.ls"
+      content
 
     {
-      get-usage,
-      livescript,
-      indent,
-      dependency-keyword,
-      comment,
-      is-comment-line, is-reference-line, is-do-line,
-      as-filepath
+      main-script-content
     }

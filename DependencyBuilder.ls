@@ -1,60 +1,43 @@
 
   DependencyBuilder = do ->
 
-    { fail } = Wsh
-    { file-exists, folder-exists } = FileSystem
-    { read-textfile-lines } = TextFile
-    { trim } = NativeString
+    { parse-script-lines } = ScriptParser
+    { resolve-namespace-paths } = NamespacePathResolver
+    { fail } = Script
+    { build-path, does-file-exist } = FileSystem
+    { read-text-file } = TextFile
+    { string-as-lines } = NativeString
 
-    { is-do-line, as-filepath } = Jsc
+    resolve-dependency-filepath = (dependency-name-metadata) ->
 
-    #
+      { qualified-namespace, dependency-name, qualified-dependency-name } = dependency-name-metadata
 
-    invalid-dependency-syntax = (dependency-lines) ->
+      resolved-folderpaths = resolve-namespace-paths qualified-namespace
 
-      invalid = yes
+      fail [ "Unable to resolve paths for qualified namespace '#qualified-namespace'" ], 6 \
+        if resolved-folderpaths.length is 0
 
-      for line in dependency-lines
+      for folderpath in resolved-folderpaths
 
-        if (trim line) is ''
-          continue
+        build-path [ folderpath, "#dependency-name.ls" ]
 
-        if is-do-line line
-          invalid = no
-          break
+          return .. if does-file-exist ..
 
-      invalid
-
-    #
+      fail [ "Unable to locate dependency '#qualified-dependency-name' in #{ resolved-folderpaths * ',' }" ], 7
 
     build-dependency = (dependency-name-metadata) ->
 
-      { qualified-namespace, qualified-dependency-name, dependency-name } = dependency-name-metadata
+      { qualified-dependency-name } = dependency-name-metadata
 
-      WScript.Echo 'dependency-name:', "[#dependency-name]"
+      filepath = resolve-dependency-filepath dependency-name-metadata
 
-      namespace-path = NamespacePathResolver.resolve-namespace-path qualified-namespace, dependency-name
+      { dependencies-references, livescript-lines } =
 
-      if namespace-path is void
+        filepath |> read-text-file |> string-as-lines
 
-        fail "Unable to resolve dependency '#qualified-dependency-name'."
+          |> parse-script-lines
 
-      filepath = as-filepath namespace-path, dependency-name
-
-      try dependency-lines = read-textfile-lines filepath
-      catch => fail ""
-
-      if invalid-dependency-syntax dependency-lines
-
-        fail do
-
-          * "Syntax error in dependency '#qualified-dependency-name'."
-            "(#filepath)"
-            "Dependency source must start with 'do ->'"
-
-      { references, source } = ScriptParser.parse-script-lines dependency-lines
-
-      dependency-name-metadata with { references, source, filepath }
+      dependency-name-metadata with { dependencies-references, livescript-lines, filepath }
 
     {
       build-dependency

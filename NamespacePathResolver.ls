@@ -1,110 +1,83 @@
 
   NamespacePathResolver = do ->
 
-    { file-exists, folder-exists, path-separator } = FileSystem
-    { get-current-folder } = Shell
-    { read-objectfile } = ObjectFile
-    { as-filepath } = Jsc
+    { does-folder-exist, does-file-exist, build-path, parent-folderpath, get-current-folderpath } = FileSystem
+    { script-filepath, fail } = Script
 
-    current-folder = get-current-folder!
+    { create-configuration-namespace-resolution-strategy: create-configuration-strategy, configuration-filename } = ConfigurationNamespaceResolutionStrategy
+    { create-filesystem-namespace-resolution-strategy: create-filesystem-strategy } = FileSystemNamespaceResolutionStrategy
 
-    configuration-namespaces = do ->
+    # estamos asumiendo que la compilacion se podria lanzar desde una folder distinta de donde reside el script que se quiere compilar
+    # es posible que sea porque en estas carpetas haya versiones que se quieren usar que sean distintas de donde actualmente reside el script
+    # por lo tanto, se buscara resolver los paths primero a partir de current-folder,
+    # luego a partir de la carpeta donde efectivamente esta el script
+    # es posible que se quieran usar versiones especificas y para eso se usara el archivo de configuracion
+    # el archivo de configuracion es opcional
+    # donde se puede apuntar namespaces especificos a carpetas especificas (en esta version, seran paths absolutos)
+    # como se asume que cada tanto se cristalizaran versiones del framework en carpetas especificas,
+    # se ofrece la oportunidad de especificar un path absoluto que apunte a esa version especifica del framework
+    # mediante el namespace especial '.' en el archivo de configuracion
+    # la declaracion del namespace especial '.' es opcional
 
-      filename = 'namespaces.conf'
+    namespace-path-getters = do ->
 
-      if not file-exists filename => return {}
+      current-folderpath = get-current-folderpath!
+      script-folderpath = parent-folderpath script-filepath
 
-      read-objectfile filename
+      #
+
+      configuration-strategy = null
+
+      configuration-filepath = build-path [ script-folderpath, configuration-filename ]
+
+      if does-file-exist configuration-filepath
+
+        configuration-strategy = create-configuration-strategy configuration-filepath
+
+      #
+
+      getters = []
+
+      add-strategy-getter = (strategy) -> getters.push strategy.get-namespace-path
+
+      #
+
+      add-strategy-getter create-filesystem-strategy script-folderpath
+
+      if script-folderpath isnt current-folderpath
+
+        add-strategy-getter create-filesystem-strategy current-folderpath
+
+      if configuration-strategy?
+
+        root-configuration-filepath = configuration-strategy.get-root-configuration-filepath!
+
+        if root-configuration-filepath isnt void
+
+          add-strategy-getter create-filesystem-strategy root-configuration-filepath
+
+        add-strategy-getter configuration-strategy
+
+      getters
 
     #
 
-    filesystem-namespaces = {}
-
-    #
-
-    resolve-filesystem-namespace-path = (qualified-namespace) ->
-
-      namespaces = qualified-namespace / '.'
-
-      namespace-path = ([ current-folder ] ++ namespaces) * "#path-separator"
-
-      filesystem-namespaces[ qualified-namespace ] := namespace-path
-
-      namespace-path
-
-    #
-
-    get-filesystem-namespace-paths = (qualified-namespace) ->
+    resolve-namespace-paths = (qualified-namespace, dependency-name) ->
 
       paths = []
 
-      namespace-path = filesystem-namespaces[qualified-namespace]
+      for get-namespace-path, index in namespace-path-getters
 
-      if namespace-path isnt void
-        paths.push namespace-path
+        namespace-path = get-namespace-path qualified-namespace
 
-      namespace-path = resolve-filesystem-namespace-path qualified-namespace
+        if namespace-path isnt void
 
-      if namespace-path isnt void
-        paths.push namespace-path
+          if does-folder-exist namespace-path
 
-      paths
-
-    #
-
-    resolve-configuration-namespace-path = (qualified-namespace) ->
-
-      root-configuration-namespace = configuration-namespaces['.']
-
-      namespaces = qualified-namespace / '.'
-
-      if root-configuration-namespace isnt void
-
-        ([ root-configuration-namespace ] ++ namespaces) * '\\'
-
-    #
-
-    get-configuration-namespace-paths = (qualified-namespace) ->
-
-      paths = []
-
-      namespace-path = configuration-namespaces[qualified-namespace]
-
-      if namespace-path isnt void
-        paths.push namespace-path
-
-      namespace-path = resolve-configuration-namespace-path qualified-namespace
-      if namespace-path isnt void
-        paths.push namespace-path
+            paths.push namespace-path
 
       paths
-
-    #
-
-    namespace-path-resolution-strategies =
-
-      * get-filesystem-namespace-paths
-        get-configuration-namespace-paths
-
-    resolve-namespace-path = (qualified-namespace, dependency-name) ->
-
-      for get-namespace-paths in namespace-path-resolution-strategies
-
-        for namespace-path in get-namespace-paths qualified-namespace
-
-          if namespace-path isnt void
-
-            if folder-exists namespace-path
-
-              filepath = namespace-path |> as-filepath _ , dependency-name
-
-              WScript.Echo namespace-path, filepath
-
-
-
-              if file-exists filepath
-                return namespace-path
 
     {
-      resolve-namespace-path
+      resolve-namespace-paths
     }

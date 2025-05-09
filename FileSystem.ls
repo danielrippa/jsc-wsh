@@ -1,21 +1,34 @@
 
   FileSystem = do ->
 
-    file-system = -> new ActiveXObject 'Scripting.FileSystemObject'
+    { create-com-object } = ComObject
+    { must-be } = NativeType
+    { backward-slash } = NativeString
 
-    fs = file-system!
+    file-system = -> create-com-object 'Scripting.FileSystemObject'
 
-      file-exists = -> ..FileExists it
-      folder-exists = -> ..FolderExists it
+    absolute-path = -> file-system!GetAbsolutePathName (it `must-be` 'String')
 
-      get-name = -> ..GetBaseName it
-      get-absolute-path = -> ..GetAbsolutePathName it
+    file-name = -> file-system!GetBaseName (it `must-be` 'String')
 
-    path-separator = '\\'
+    filepath-separator = backward-slash
+
+    build-path = -> (it `must-be` 'Array') * "#filepath-separator"
+
+    does-folder-exist = -> file-system!FolderExists (it `must-be` 'String')
+    does-file-exist   = -> file-system!FileExists   (it `must-be` 'String')
+
+    get-current-folderpath = -> create-com-object 'WScript.Shell' .CurrentDirectory
+
+    parent-folderpath = -> file-system!GetParentFolderName (it `must-be` 'String')
 
     {
       file-system,
-      file-exists, folder-exists,
-      get-name, get-absolute-path,
-      path-separator
+      absolute-path,
+      file-name,
+      filepath-separator,
+      build-path,
+      does-folder-exist, does-file-exist,
+      get-current-folderpath,
+      parent-folderpath
     }

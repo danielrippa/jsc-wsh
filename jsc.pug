@@ -1,38 +1,52 @@
 job: script
 
-  include:livescript(bare=true) NativeString.ls
+  include:livescript(bare=true) NativeError.ls
+  include:livescript(bare=true) NativeType.ls
   include:livescript(bare=true) NativeArray.ls
-  include:livescript(bare=true) NativeFunction.ls
+  include:livescript(bare=true) NativeString.ls
+  include:livescript(bare=true) NativeObject.ls
 
   include:livescript(bare=true) Args.ls
   include:livescript(bare=true) IO.ls
+  include:livescript(bare=true) ComObject.ls
   include:livescript(bare=true) FileSystem.ls
   include:livescript(bare=true) TextFile.ls
   include:livescript(bare=true) ObjectFile.ls
-  include:livescript(bare=true) Shell.ls
-  include:livescript(bare=true) Wsh.ls
+  include:livescript(bare=true) Script.ls
 
+  include:livescript(bare=true) Pug.ls
+  include:livescript(bare=true) Livescript.ls
   include:livescript(bare=true) Jsc.ls
+
   include:livescript(bare=true) ScriptParser.ls
+  include:livescript(bare=true) ConfigurationNamespaceResolutionStrategy.ls
+  include:livescript(bare=true) FileSystemNamespaceResolutionStrategy.ls
   include:livescript(bare=true) NamespacePathResolver.ls
   include:livescript(bare=true) DependencyBuilder.ls
   include:livescript(bare=true) DependencyManager.ls
+  include:livescript(bare=true) DependenciesComposer.ls
   include:livescript(bare=true) ScriptComposer.ls
 
   :livescript(bare=true)
 
-    { argc, argv } = Args
-    { compose-script-lines } = ScriptComposer
-    { writeln } = IO
-    { get-usage } = Jsc
-    { fail } = Wsh
+    { argv } = Args
+    { stdout } = IO
+    { string-as-lines, crlf, trim } = NativeString
+    { each-array-item } = NativeArray
 
-    if argc > 0
-      filepath = argv.0
-    else
-      fail get-usage!
+    { main-script-content } = Jsc
+    { pug-livescript-prefix } = Pug
+    { parse-script-lines } = ScriptParser
+    { compose-main-script-source } = ScriptComposer
+    { compose-dependencies-source } = DependenciesComposer
 
-    for line in compose-script-lines filepath
+    argv |> main-script-content |> string-as-lines |> parse-script-lines
 
-      writeln line
+      |> ({ dependencies-references, livescript-lines }) ->
 
+        [ pug-livescript-prefix ]
+
+          |> (++ compose-dependencies-source dependencies-references)
+          |> (++ compose-main-script-source argv.0, dependencies-references, livescript-lines)
+
+      |> each-array-item _ , -> stdout crlf, it

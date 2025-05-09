@@ -1,20 +1,12 @@
 
   IO = do ->
 
-    { lf } = NativeString
-
     [ stdout, stderr ] = do ->
 
-      stream = (name) -> !-> for arg in & => WScript["Std#name"].Write arg
+      stream = (stream-name) -> !-> for arg in arguments => WScript[stream-name].Write arg
 
-      [ (stream name) for name in <[ Out Err ]> ]
-
-    #
-
-    writeln = -> stdout lf ; stdout ...
-    log = -> stderr lf ; stderr ...
+      [ (stream name) for name in <[ StdOut StdErr ]> ]
 
     {
-      writeln, log,
-      lf
+      stdout, stderr
     }

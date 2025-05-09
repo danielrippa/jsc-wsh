@@ -1,38 +1,44 @@
 
   ObjectFile = do ->
 
-    { read-textfile-lines } = TextFile
-    { trim } = NativeString
+    { object-from-pairs } = NativeObject
+    { read-text-file } = TextFile
+    { trim, string-as-lines, string-contains: contains } = NativeString
+    { map-array-items, filter-array-items } = NativeArray
 
-    read-objectfile = (filepath) ->
+    lines-as-member-pairs = (lines) ->
 
-      object = {}
+      lines
 
-      for line in read-textfile-lines filepath
+        |> map-array-items _ , (line) ->
 
-        trimmed = trim line
+          line = trim line
 
-        if trimmed is ''
-          continue
+          index = line.index-of ' '
 
-        if (trimmed.char-at 0) is '#'
-          continue
+          if index is -1
 
-        index = trimmed.index-of ' '
+            [ line, void ]
 
-        if index is -1
+          else
 
-          object[trimmed] = void
+            key = line.slice 0, index ; value = line.slice index + 1
 
-        else
+            [ key, value ]
 
-          key = trimmed.slice 0, index
-          value = trimmed.slice index + 1
+    is-comment-line = -> i
 
-          object[key] = value
+    read-object-file = (filepath) ->
 
-      object
+      filepath
+
+        |> read-text-file
+        |> string-as-lines
+        |> filter-array-items _ , -> (trim it)      isnt ''
+        |> filter-array-items _ , -> (it.char-at 0) isnt '#'
+        |> lines-as-member-pairs
+        |> object-from-pairs
 
     {
-      read-objectfile
+      read-object-file
     }

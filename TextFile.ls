@@ -2,20 +2,16 @@
   TextFile = do ->
 
     { file-system } = FileSystem
-    { text-as-lines } = NativeString
+    { must-be } = NativeType
 
     io-mode = reading: 1
 
-    text-stream = (filepath) -> file-system!OpenTextFile filepath, io-mode.reading
+    text-stream = (filepath, mode) -> file-system!OpenTextFile (filepath `must-be` 'String'), (mode `must-be` 'Number')
 
-    read-textfile = (filepath) ->
-
-      (text-stream filepath) => content = ..ReadAll! ; ..Close!
-
-      content
-
-    read-textfile-lines = -> read-textfile it |> text-as-lines
+    read-text-file = (filepath) -> (text-stream filepath, io-mode.reading) => content = ..ReadAll! ; ..Close! ; return content
 
     {
-      read-textfile-lines
+      io-mode,
+      text-stream,
+      read-text-file
     }

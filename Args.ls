@@ -1,13 +1,15 @@
 
   Args = do ->
 
+    { must-be } = NativeType
+
     WScript.Arguments.Unnamed
 
-      arg  = -> ..Item it
       argc = ..Count
+      arg  = -> ..Item (it `must-be` 'Number')
 
     argv = [ (arg index) for index til argc ]
 
     {
-      argc, argv
+      arg, argc, argv
     }
