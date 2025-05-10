@@ -30,7 +30,7 @@
 
       { dependencies-references } = resolved-dependencies[ dependency-key ]
 
-      each-object-member dependencies-references, (child-reference) ->
+      each-object-member dependencies-references, (key, child-reference) ->
 
         { dependency-name-metadata: { qualified-dependency-name } } = child-reference
 
