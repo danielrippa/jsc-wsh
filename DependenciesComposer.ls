@@ -2,18 +2,20 @@
   DependenciesComposer = do ->
 
     { object-member-values } = NativeObject
-    { map-array-items, fold-array } = NativeArray
+    { map-array-items: map, fold-array } = NativeArray
     { resolve-dependencies-references } = DependencyManager
     { value-as-string } = NativeType
     { comment } = Livescript
     { indent-string } = NativeString
+
+    indent2 = -> indent-string 2, it
 
     compose-dependencies-references = (references) ->
 
       references
 
         |> object-member-values
-        |> map-array-items _ , ({ dependency-members, dependency-name-metadata: { qualified-dependency-name } }) ->
+        |> map _ , ({ dependency-members, dependency-name-metadata: { qualified-dependency-name } }) ->
 
           "{ #{ dependency-members * ', ' } } = #qualified-dependency-name ;"
 
@@ -56,7 +58,7 @@
 
         full-path = if current-path then "#current-path.#namespace" else namespace
 
-        lines ++= indent-string 2, "#full-path = #{ if current-path then "#full-path || " else '' }{} ;"
+        lines ++= indent2 "#full-path = #{ if current-path then "#full-path || " else '' }{} ;"
         lines ++= compose-namespace-node-lines children, full-path
 
       lines
@@ -76,33 +78,28 @@
 
       #
 
-      [ indent-string 2, comment "Namespaces" ]
-
-        |> (++ lines)
+      [ indent2 comment "Namespaces" ] |> (++ lines)
 
     #
 
     compose-dependency-lines = (dependency) ->
 
-      { qualified-dependency-name, filepath, livescript-lines } = dependency
+      { qualified-dependency-name, filepath, dependencies-references, livescript-lines } = dependency
 
-      * "Dependency #qualified-dependency-name"
-        "(#filepath)"
+      references-lines = compose-dependencies-references dependencies-references |> map _ , indent2 |> map _ , indent2
 
-      |> map-array-items _ , -> comment it
+      [ "Dependency #qualified-dependency-name", "(#filepath)" ] |> map _ , comment
 
-      |> (++ "#qualified-dependency-name = do ->")
+      |> (++ "#qualified-dependency-name = do ->") |> map _ , indent2
 
-      |> map-array-items _ , -> indent-string 2, it
+      |> (++ references-lines)
       |> (++ livescript-lines)
 
     #
 
     compose-dependencies-lines = (dependencies) ->
 
-      fold-array dependencies, [], (lines, dependency) ->
-
-        lines ++ compose-dependency-lines dependency
+      fold-array dependencies, [], (lines, dependency) -> lines ++ compose-dependency-lines dependency
 
     #
 

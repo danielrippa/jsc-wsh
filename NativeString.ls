@@ -5,7 +5,7 @@
 
     char = (char-code) -> String.from-char-code (char-code `must-be` 'Number')
 
-    [ cr, lf, record, backward-slash ] = [ (char char-code) for char-code in [ 10 13 30 92 ] ]
+    [ lf, cr, record, backward-slash ] = [ (char char-code) for char-code in [ 10 13 30 92 ] ]
 
     crlf = "#cr#lf"
 

@@ -9,35 +9,29 @@
 
     resolved-dependencies = {} ; dependencies = []
 
-    add-dependency = (dependency) ->
-
-      { qualified-dependency-name } = dependency
-
-      resolved-dependencies[ lower-case qualified-dependency-name ] := dependency
-      dependencies.push dependency
-
     #
 
-    resolve-dependency-reference = (parent-reference) ->
+    resolve-dependency-reference = (parent-reference) !->
 
       { dependency-name-metadata: parent-metadata } = parent-reference
       { qualified-dependency-name: parent-dependency-name } = parent-metadata
 
-      dependency-key = lower-case parent-dependency-name
+      parent-key = lower-case parent-dependency-name
 
-      if resolved-dependencies[ dependency-key ] is void
-        add-dependency build-dependency parent-metadata
+      if resolved-dependencies[ parent-key ] is void
+        resolved-dependencies[ parent-key ] := build-dependency parent-metadata
 
-      { dependencies-references } = resolved-dependencies[ dependency-key ]
+      { dependencies-references = {} } = resolved-dependencies[ parent-key ]
 
       each-object-member dependencies-references, (key, child-reference) ->
 
         { dependency-name-metadata: { qualified-dependency-name } } = child-reference
 
-        child-dependency = resolved-dependencies[ lower-case qualified-dependency-name ]
-        if child-dependency is void
+        if resolved-dependencies[ lower-case qualified-dependency-name ] is void
 
           resolve-dependency-reference child-reference
+
+      dependencies.push resolved-dependencies[ parent-key ]
 
     #
 
