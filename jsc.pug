@@ -31,7 +31,7 @@ job: script
 
     { argv } = Args
     { stdout } = IO
-    { string-as-lines, crlf, trim } = NativeString
+    { string-as-lines, lf, trim } = NativeString
     { each-array-item } = NativeArray
 
     { main-script-content } = Jsc
@@ -49,4 +49,4 @@ job: script
           |> (++ compose-dependencies-source dependencies-references)
           |> (++ compose-main-script-source argv.0, dependencies-references, livescript-lines)
 
-      |> each-array-item _ , -> stdout crlf, it
+      |> each-array-item _ , -> stdout lf, it
