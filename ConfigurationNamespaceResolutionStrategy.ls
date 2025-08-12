@@ -26,8 +26,6 @@
 
             configuration-namespaces[ qualified-namespace ]
 
-              return .. if .. isnt void
-
     {
       create-configuration-namespace-resolution-strategy,
       configuration-filename

@@ -18,6 +18,8 @@
 
       parent-key = lower-case parent-dependency-name
 
+      was-already-resolved = resolved-dependencies[ parent-key ] isnt void
+
       if resolved-dependencies[ parent-key ] is void
         resolved-dependencies[ parent-key ] := build-dependency parent-metadata
 
@@ -31,7 +33,8 @@
 
           resolve-dependency-reference child-reference
 
-      dependencies.push resolved-dependencies[ parent-key ]
+      unless was-already-resolved
+        dependencies.push resolved-dependencies[ parent-key ]
 
     #
 

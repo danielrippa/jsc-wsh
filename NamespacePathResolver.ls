@@ -1,7 +1,7 @@
 
   NamespacePathResolver = do ->
 
-    { does-folder-exist, does-file-exist, build-path, parent-folderpath, get-current-folderpath } = FileSystem
+    { does-folder-exist, does-file-exist, build-path, absolute-path, parent-folderpath, get-current-folderpath } = FileSystem
     { script-filepath, fail } = Script
 
     { create-configuration-namespace-resolution-strategy: create-configuration-strategy, configuration-filename } = ConfigurationNamespaceResolutionStrategy
@@ -72,9 +72,11 @@
 
         if namespace-path isnt void
 
-          if does-folder-exist namespace-path
+          absolute-namespace-path = absolute-path namespace-path
 
-            paths.push namespace-path
+          if does-folder-exist absolute-namespace-path
+
+            paths.push absolute-namespace-path
 
       paths
 
