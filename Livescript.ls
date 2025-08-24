@@ -58,7 +58,7 @@
 
     invalid-dependency-syntax = (line, index) ->
 
-      throw-error "Invalid dependency reference syntax at line #lindex '#line'"
+      throw-error "Invalid dependency reference syntax at line #index '#line'"
 
     #
 
